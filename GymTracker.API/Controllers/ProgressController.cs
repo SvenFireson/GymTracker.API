@@ -39,4 +39,29 @@ public class ProgressController : ControllerBase
             Notes = bestSet.Notes
         });
     }
+    [HttpGet("history/{exerciseId}")]
+    public async Task<IActionResult> GetExerciseHistory(int exerciseId)
+    {
+        var exercise = await _context.Exercises.FindAsync(exerciseId);
+
+        if (exercise == null)
+            return NotFound("Exercise not found.");
+
+        var history = await _context.WorkoutSets
+            .Where(ws => ws.ExerciseId == exerciseId)
+            .Include(ws => ws.WorkoutSession)
+            .OrderBy(ws => ws.WorkoutSession.StartedAt)
+            .Select(ws => new
+            {
+                Date = ws.WorkoutSession.StartedAt,
+                Exercise = exercise.Name,
+                ws.SetNumber,
+                ws.Weight,
+                ws.Reps,
+                ws.Notes
+            })
+            .ToListAsync();
+
+        return Ok(history);
+    }
 }
