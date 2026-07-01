@@ -17,4 +17,6 @@ public class Exercise
     public bool IsCompound { get; set; }
 
     public string VideoUrl { get; set; } = string.Empty;
+
+    public List<WorkoutExercise> WorkoutExercises { get; set; } = new();
 }

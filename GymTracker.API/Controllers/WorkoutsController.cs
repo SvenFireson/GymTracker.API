@@ -76,4 +76,28 @@ public class WorkoutsController : ControllerBase
 
         return NoContent();
     }
+    [HttpPost("{workoutId}/exercises")]
+    public async Task<IActionResult> AddExerciseToWorkout(int workoutId, AddExerciseToWorkoutDto dto)
+    {
+        var workout = await _context.Workouts.FindAsync(workoutId);
+
+        if (workout == null)
+            return NotFound("Workout not found.");
+
+        var exercise = await _context.Exercises.FindAsync(dto.ExerciseId);
+
+        if (exercise == null)
+            return NotFound("Exercise not found.");
+
+        var workoutExercise = new WorkoutExercise
+        {
+            WorkoutId = workoutId,
+            ExerciseId = dto.ExerciseId
+        };
+
+        _context.WorkoutExercises.Add(workoutExercise);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
