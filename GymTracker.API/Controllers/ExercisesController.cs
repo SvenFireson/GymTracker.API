@@ -18,9 +18,32 @@ public class ExercisesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Exercise>>> GetExercises()
+    public async Task<ActionResult> GetExercises(int page = 1, int pageSize = 10)
     {
-        return await _context.Exercises.ToListAsync();
+        if (page < 1)
+            page = 1;
+
+        if (pageSize < 1)
+            pageSize = 10;
+
+        if (pageSize > 50)
+            pageSize = 50;
+
+        var totalExercises = await _context.Exercises.CountAsync();
+
+        var exercises = await _context.Exercises
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return Ok(new
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalExercises = totalExercises,
+            TotalPages = (int)Math.Ceiling(totalExercises / (double)pageSize),
+            Data = exercises
+        });
     }
 
     [HttpGet("{id}")]
