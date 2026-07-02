@@ -91,4 +91,63 @@ public class ProgressController : ControllerBase
             TotalReps = totalReps
         });
     }
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboard()
+    {
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+        var recentSessions = await _context.WorkoutSessions
+            .Where(ws => ws.StartedAt >= sevenDaysAgo)
+            .ToListAsync();
+
+        var recentSets = await _context.WorkoutSets
+            .Include(ws => ws.WorkoutSession)
+            .Where(ws => ws.WorkoutSession.StartedAt >= sevenDaysAgo)
+            .ToListAsync();
+
+        var totalVolume = recentSets.Sum(ws => ws.Weight * ws.Reps);
+
+        return Ok(new
+        {
+            SessionsThisWeek = recentSessions.Count,
+            SetsCompleted = recentSets.Count,
+            TotalVolume = totalVolume,
+            TotalReps = recentSets.Sum(ws => ws.Reps)
+        });
+
+    }
+
+    [HttpGet("workout-summary/{sessionId}")]
+    public async Task<IActionResult> GetWorkoutSummary(int sessionId)
+    {
+        var session = await _context.WorkoutSessions
+            .Include(ws => ws.WorkoutSets)
+                .ThenInclude(s => s.Exercise)
+            .FirstOrDefaultAsync(ws => ws.Id == sessionId);
+
+        if (session == null)
+            return NotFound("Workout session not found.");
+
+        return Ok(new
+        {
+            SessionId = session.Id,
+            Started = session.StartedAt,
+            Completed = session.CompletedAt,
+            TotalExercises = session.WorkoutSets
+                .Select(s => s.ExerciseId)
+                .Distinct()
+                .Count(),
+            TotalSets = session.WorkoutSets.Count,
+            TotalVolume = session.WorkoutSets.Sum(s => s.Weight * s.Reps),
+            Exercises = session.WorkoutSets.Select(s => new
+            {
+                Exercise = s.Exercise.Name,
+                s.SetNumber,
+                s.Weight,
+                s.Reps
+            })
+        });
+    }
+
+
 }

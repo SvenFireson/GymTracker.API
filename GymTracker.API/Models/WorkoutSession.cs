@@ -12,4 +12,5 @@ public class WorkoutSession
     public DateTime? CompletedAt { get; set; }
 
     public string Notes { get; set; } = string.Empty;
+    public List<WorkoutSet> WorkoutSets { get; set; } = new();
 }
