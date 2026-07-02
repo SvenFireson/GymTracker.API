@@ -18,16 +18,30 @@ public class WorkoutSetsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<WorkoutSet>>> GetWorkoutSets()
+    public async Task<ActionResult<List<WorkoutSetResponseDto>>> GetWorkoutSets()
     {
-        return await _context.WorkoutSets
+        var sets = await _context.WorkoutSets
             .Include(ws => ws.Exercise)
-            .Include(ws => ws.WorkoutSession)
             .ToListAsync();
+
+        var response = sets.Select(ws => new WorkoutSetResponseDto
+        {
+            Id = ws.Id,
+            WorkoutSessionId = ws.WorkoutSessionId,
+            ExerciseId = ws.ExerciseId,
+            ExerciseName = ws.Exercise.Name,
+            SetNumber = ws.SetNumber,
+            Weight = ws.Weight,
+            Reps = ws.Reps,
+            Volume = ws.Weight * ws.Reps,
+            Notes = ws.Notes
+        }).ToList();
+
+        return Ok(response);
     }
 
     [HttpPost]
-    public async Task<ActionResult<WorkoutSet>> CreateWorkoutSet(CreateWorkoutSetDto dto)
+    public async Task<ActionResult<WorkoutSetResponseDto>> CreateWorkoutSet(CreateWorkoutSetDto dto)
     {
         var session = await _context.WorkoutSessions.FindAsync(dto.WorkoutSessionId);
         if (session == null)
@@ -50,6 +64,19 @@ public class WorkoutSetsController : ControllerBase
         _context.WorkoutSets.Add(workoutSet);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetWorkoutSets), new { id = workoutSet.Id }, workoutSet);
+        var response = new WorkoutSetResponseDto
+        {
+            Id = workoutSet.Id,
+            WorkoutSessionId = workoutSet.WorkoutSessionId,
+            ExerciseId = workoutSet.ExerciseId,
+            ExerciseName = exercise.Name,
+            SetNumber = workoutSet.SetNumber,
+            Weight = workoutSet.Weight,
+            Reps = workoutSet.Reps,
+            Volume = workoutSet.Weight * workoutSet.Reps,
+            Notes = workoutSet.Notes
+        };
+
+        return CreatedAtAction(nameof(GetWorkoutSets), new { id = workoutSet.Id }, response);
     }
 }

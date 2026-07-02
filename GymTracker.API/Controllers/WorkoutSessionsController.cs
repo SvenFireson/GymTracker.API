@@ -18,11 +18,26 @@ public class WorkoutSessionsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<WorkoutSession>>> GetWorkoutSessions()
+    public async Task<ActionResult<List<WorkoutSetResponseDto>>> GetWorkoutSets()
     {
-        return await _context.WorkoutSessions
-            .Include(ws => ws.Workout)
+        var sets = await _context.WorkoutSets
+            .Include(ws => ws.Exercise)
             .ToListAsync();
+
+        var response = sets.Select(ws => new WorkoutSetResponseDto
+        {
+            Id = ws.Id,
+            WorkoutSessionId = ws.WorkoutSessionId,
+            ExerciseId = ws.ExerciseId,
+            ExerciseName = ws.Exercise.Name,
+            SetNumber = ws.SetNumber,
+            Weight = ws.Weight,
+            Reps = ws.Reps,
+            Volume = ws.Weight * ws.Reps,
+            Notes = ws.Notes
+        }).ToList();
+
+        return Ok(response);
     }
 
     [HttpGet("{id}")]
