@@ -88,4 +88,25 @@ public class ExercisesController : ControllerBase
 
         return NoContent();
     }
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchExercises(
+    string? muscleGroup,
+    string? difficulty)
+    {
+        var query = _context.Exercises.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(muscleGroup))
+        {
+            query = query.Where(e => e.MuscleGroup == muscleGroup);
+        }
+
+        if (!string.IsNullOrWhiteSpace(difficulty))
+        {
+            query = query.Where(e => e.Difficulty == difficulty);
+        }
+
+        var exercises = await query.ToListAsync();
+
+        return Ok(exercises);
+    }
 }
