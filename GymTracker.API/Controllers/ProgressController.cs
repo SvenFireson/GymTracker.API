@@ -64,4 +64,31 @@ public class ProgressController : ControllerBase
 
         return Ok(history);
     }
+    [HttpGet("volume/{exerciseId}")]
+    public async Task<IActionResult> GetExerciseVolume(int exerciseId)
+    {
+        var exercise = await _context.Exercises.FindAsync(exerciseId);
+
+        if (exercise == null)
+            return NotFound("Exercise not found.");
+
+        var sets = await _context.WorkoutSets
+            .Where(ws => ws.ExerciseId == exerciseId)
+            .ToListAsync();
+
+        if (!sets.Any())
+            return NotFound("No sets found for this exercise.");
+
+        var totalVolume = sets.Sum(ws => ws.Weight * ws.Reps);
+        var totalSets = sets.Count;
+        var totalReps = sets.Sum(ws => ws.Reps);
+
+        return Ok(new
+        {
+            Exercise = exercise.Name,
+            TotalVolume = totalVolume,
+            TotalSets = totalSets,
+            TotalReps = totalReps
+        });
+    }
 }
