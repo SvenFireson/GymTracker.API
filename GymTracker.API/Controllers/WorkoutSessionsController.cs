@@ -18,22 +18,19 @@ public class WorkoutSessionsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<WorkoutSetResponseDto>>> GetWorkoutSets()
+    public async Task<ActionResult<List<WorkoutSessionResponseDto>>> GetWorkoutSessions()
     {
-        var sets = await _context.WorkoutSets
-            .Include(ws => ws.Exercise)
+        var sessions = await _context.WorkoutSessions
+            .Include(ws => ws.Workout)
             .ToListAsync();
 
-        var response = sets.Select(ws => new WorkoutSetResponseDto
+        var response = sessions.Select(ws => new WorkoutSessionResponseDto
         {
             Id = ws.Id,
-            WorkoutSessionId = ws.WorkoutSessionId,
-            ExerciseId = ws.ExerciseId,
-            ExerciseName = ws.Exercise.Name,
-            SetNumber = ws.SetNumber,
-            Weight = ws.Weight,
-            Reps = ws.Reps,
-            Volume = ws.Weight * ws.Reps,
+            WorkoutId = ws.WorkoutId,
+            WorkoutName = ws.Workout.Name,
+            StartedAt = ws.StartedAt,
+            CompletedAt = ws.CompletedAt,
             Notes = ws.Notes
         }).ToList();
 
@@ -41,7 +38,7 @@ public class WorkoutSessionsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<WorkoutSession>> GetWorkoutSession(int id)
+    public async Task<ActionResult<WorkoutSessionResponseDto>> GetWorkoutSession(int id)
     {
         var session = await _context.WorkoutSessions
             .Include(ws => ws.Workout)
@@ -50,7 +47,17 @@ public class WorkoutSessionsController : ControllerBase
         if (session == null)
             return NotFound();
 
-        return session;
+        var response = new WorkoutSessionResponseDto
+        {
+            Id = session.Id,
+            WorkoutId = session.WorkoutId,
+            WorkoutName = session.Workout.Name,
+            StartedAt = session.StartedAt,
+            CompletedAt = session.CompletedAt,
+            Notes = session.Notes
+        };
+
+        return Ok(response);
     }
 
     [HttpPost]
@@ -70,7 +77,17 @@ public class WorkoutSessionsController : ControllerBase
         _context.WorkoutSessions.Add(session);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetWorkoutSession), new { id = session.Id }, session);
+        var response = new WorkoutSessionResponseDto
+        {
+            Id = session.Id,
+            WorkoutId = session.WorkoutId,
+            WorkoutName = workout.Name,
+            StartedAt = session.StartedAt,
+            CompletedAt = session.CompletedAt,
+            Notes = session.Notes
+        };
+
+        return CreatedAtAction(nameof(GetWorkoutSession), new { id = session.Id }, response);
     }
 
     [HttpPut("{id}/complete")]
