@@ -18,46 +18,47 @@ public class WorkoutsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult> GetExercises(
-     int page = 1,
-     int pageSize = 10,
-     string? sortBy = "name")
+    public async Task<ActionResult<List<WorkoutResponseDto>>> GetWorkouts()
     {
-        if (page < 1)
-            page = 1;
-
-        if (pageSize < 1)
-            pageSize = 10;
-
-        if (pageSize > 50)
-            pageSize = 50;
-
-        var query = _context.Exercises.AsQueryable();
-
-        query = sortBy?.ToLower() switch
-        {
-            "muscle" => query.OrderBy(e => e.MuscleGroup),
-            "difficulty" => query.OrderBy(e => e.Difficulty),
-            "equipment" => query.OrderBy(e => e.Equipment),
-            _ => query.OrderBy(e => e.Name)
-        };
-
-        var totalExercises = await query.CountAsync();
-
-        var exercises = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+        var workouts = await _context.Workouts
+            .Include(w => w.WorkoutExercises)
+                .ThenInclude(we => we.Exercise)
             .ToListAsync();
 
-        return Ok(new
+        var response = workouts.Select(w => new WorkoutResponseDto
         {
-            Page = page,
-            PageSize = pageSize,
-            SortBy = sortBy,
-            TotalExercises = totalExercises,
-            TotalPages = (int)Math.Ceiling(totalExercises / (double)pageSize),
-            Data = exercises
-        });
+            Id = w.Id,
+            Name = w.Name,
+            CreatedAt = w.CreatedAt,
+            Exercises = w.WorkoutExercises
+                .Select(we => we.Exercise.Name)
+                .ToList()
+        }).ToList();
+
+        return Ok(response);
+    }
+    [HttpGet("{id}")]
+    public async Task<ActionResult<WorkoutResponseDto>> GetWorkoutById(int id)
+    {
+        var workout = await _context.Workouts
+            .Include(w => w.WorkoutExercises)
+                .ThenInclude(we => we.Exercise)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (workout == null)
+            return NotFound();
+
+        var response = new WorkoutResponseDto
+        {
+            Id = workout.Id,
+            Name = workout.Name,
+            CreatedAt = workout.CreatedAt,
+            Exercises = workout.WorkoutExercises
+                .Select(we => we.Exercise.Name)
+                .ToList()
+        };
+
+        return Ok(response);
     }
 
     [HttpPost]
@@ -71,7 +72,15 @@ public class WorkoutsController : ControllerBase
         _context.Workouts.Add(workout);
         await _context.SaveChangesAsync();
 
-        return Ok(workout);
+        var response = new WorkoutResponseDto
+        {
+            Id = workout.Id,
+            Name = workout.Name,
+            CreatedAt = workout.CreatedAt,
+            Exercises = new List<string>()
+        };
+
+        return CreatedAtAction(nameof(GetWorkoutById), new { id = workout.Id }, response);
     }
 
     [HttpPut("{id}")]

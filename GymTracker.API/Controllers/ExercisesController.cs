@@ -45,9 +45,20 @@ public class ExercisesController : ControllerBase
         var totalExercises = await query.CountAsync();
 
         var exercises = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+    .Skip((page - 1) * pageSize)
+    .Take(pageSize)
+    .Select(e => new ExerciseResponseDto
+    {
+        Id = e.Id,
+        Name = e.Name,
+        MuscleGroup = e.MuscleGroup,
+        Equipment = e.Equipment,
+        Description = e.Description,
+        Difficulty = e.Difficulty,
+        IsCompound = e.IsCompound,
+        VideoUrl = e.VideoUrl
+    })
+    .ToListAsync();
 
         return Ok(new
         {
