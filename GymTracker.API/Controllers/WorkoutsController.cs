@@ -18,20 +18,46 @@ public class WorkoutsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Workout>>> GetWorkouts()
+    public async Task<ActionResult> GetExercises(
+     int page = 1,
+     int pageSize = 10,
+     string? sortBy = "name")
     {
-        return await _context.Workouts.ToListAsync();
-    }
+        if (page < 1)
+            page = 1;
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Workout>> GetWorkout(int id)
-    {
-        var workout = await _context.Workouts.FindAsync(id);
+        if (pageSize < 1)
+            pageSize = 10;
 
-        if (workout == null)
-            return NotFound();
+        if (pageSize > 50)
+            pageSize = 50;
 
-        return workout;
+        var query = _context.Exercises.AsQueryable();
+
+        query = sortBy?.ToLower() switch
+        {
+            "muscle" => query.OrderBy(e => e.MuscleGroup),
+            "difficulty" => query.OrderBy(e => e.Difficulty),
+            "equipment" => query.OrderBy(e => e.Equipment),
+            _ => query.OrderBy(e => e.Name)
+        };
+
+        var totalExercises = await query.CountAsync();
+
+        var exercises = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return Ok(new
+        {
+            Page = page,
+            PageSize = pageSize,
+            SortBy = sortBy,
+            TotalExercises = totalExercises,
+            TotalPages = (int)Math.Ceiling(totalExercises / (double)pageSize),
+            Data = exercises
+        });
     }
 
     [HttpPost]
@@ -45,7 +71,7 @@ public class WorkoutsController : ControllerBase
         _context.Workouts.Add(workout);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetWorkout), new { id = workout.Id }, workout);
+        return Ok(workout);
     }
 
     [HttpPut("{id}")]

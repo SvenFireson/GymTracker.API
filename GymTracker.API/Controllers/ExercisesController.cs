@@ -18,7 +18,10 @@ public class ExercisesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult> GetExercises(int page = 1, int pageSize = 10)
+    public async Task<ActionResult> GetExercises(
+     int page = 1,
+     int pageSize = 10,
+     string? sortBy = "name")
     {
         if (page < 1)
             page = 1;
@@ -29,9 +32,19 @@ public class ExercisesController : ControllerBase
         if (pageSize > 50)
             pageSize = 50;
 
-        var totalExercises = await _context.Exercises.CountAsync();
+        var query = _context.Exercises.AsQueryable();
 
-        var exercises = await _context.Exercises
+        query = sortBy?.ToLower() switch
+        {
+            "muscle" => query.OrderBy(e => e.MuscleGroup),
+            "difficulty" => query.OrderBy(e => e.Difficulty),
+            "equipment" => query.OrderBy(e => e.Equipment),
+            _ => query.OrderBy(e => e.Name)
+        };
+
+        var totalExercises = await query.CountAsync();
+
+        var exercises = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -40,6 +53,7 @@ public class ExercisesController : ControllerBase
         {
             Page = page,
             PageSize = pageSize,
+            SortBy = sortBy,
             TotalExercises = totalExercises,
             TotalPages = (int)Math.Ceiling(totalExercises / (double)pageSize),
             Data = exercises
