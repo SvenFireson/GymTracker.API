@@ -114,6 +114,11 @@ public class WorkoutsController : ControllerBase
     [HttpPost("{workoutId}/exercises")]
     public async Task<IActionResult> AddExerciseToWorkout(int workoutId, AddExerciseToWorkoutDto dto)
     {
+        var alreadyExists = await _context.WorkoutExercises
+    .AnyAsync(we => we.WorkoutId == workoutId && we.ExerciseId == dto.ExerciseId);
+
+        if (alreadyExists)
+            return BadRequest("This exercise is already in the workout.");
         var workout = await _context.Workouts.FindAsync(workoutId);
 
         if (workout == null)
