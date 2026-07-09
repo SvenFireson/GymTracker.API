@@ -15,4 +15,5 @@ public class ApplicationDbContext : DbContext
     public DbSet<WorkoutExercise> WorkoutExercises { get; set; }
     public DbSet<WorkoutSession> WorkoutSessions { get; set; }
     public DbSet<WorkoutSet> WorkoutSets { get; set; }
+    public DbSet<User> Users { get; set; }
 }
