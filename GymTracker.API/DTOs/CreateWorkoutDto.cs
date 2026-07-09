@@ -1,10 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace GymTracker.API.DTOs;
-
-public class CreateWorkoutDto
+namespace GymTracker.API.DTOs.Workouts
 {
-    [Required]
-    [StringLength(100)]
-    public string Name { get; set; } = string.Empty;
+    public class CreateWorkoutDto
+    {
+        [Required]
+        [StringLength(100, MinimumLength = 2)]
+        public string Name { get; set; } = string.Empty;
+
+      
+    }
 }

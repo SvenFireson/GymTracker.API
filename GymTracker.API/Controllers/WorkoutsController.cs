@@ -4,6 +4,9 @@ using GymTracker.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using GymTracker.API.DTOs.Workouts;
+using GymTracker.API.Models;
 
 namespace GymTracker.API.Controllers;
 
@@ -22,7 +25,10 @@ public class WorkoutsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<WorkoutResponseDto>>> GetWorkouts()
     {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
         var workouts = await _context.Workouts
+            .Where(w => w.UserId == userId)
             .Include(w => w.WorkoutExercises)
                 .ThenInclude(we => we.Exercise)
             .ToListAsync();
@@ -66,9 +72,12 @@ public class WorkoutsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Workout>> CreateWorkout(CreateWorkoutDto dto)
     {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
         var workout = new Workout
         {
-            Name = dto.Name
+            Name = dto.Name,
+            UserId = userId
         };
 
         _context.Workouts.Add(workout);
