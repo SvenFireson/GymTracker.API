@@ -3,11 +3,13 @@ using GymTracker.API.DTOs;
 using GymTracker.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GymTracker.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class WorkoutsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
